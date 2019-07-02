@@ -112,8 +112,3 @@ CREATE TABLE product_order (
     count INTEGER UNIQUE DEFAULT 1
 )
 """
-
-catalog_insert = """\
-INSERT INTO catalog (name) 
-VALUES (?)
-"""
