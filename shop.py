@@ -8,6 +8,8 @@ class QueryData:
         self.con = connect
         self.cur = cursor
         self.vars = dict()
+        self.vars_names = list()
+        self.more_sql = str()
 
     def valid_num(self, name_var):
         while True:
@@ -159,6 +161,50 @@ class QueryData:
         }
         self.pattern_insert("product_order")
 
+    def pattern_select(self):
+        sql = (
+            "SELECT " + ", ".join(self.vars_names) +
+            " FROM " + self.more_sql
+        )
+        try:
+            cur.execute(sql)
+        except sqlite3.DatabaseError as err:
+            print("Ошибка :", err)
+        else:
+            for name in self.vars_names:
+                print("|{0:^15}".format(name), end="")
+            print("|\n|", *["-"*15 + "|" for i in self.vars_names], sep="")
+            for row in cur:
+                for elem in row:
+                    print("|{0:^15}".format(elem), end="")
+                print("|")
+            print("|", *["-"*15 + "|" for i in self.vars_names], sep="")
+            print("Запрос прошел успешно")
+
+    def select_catalog(self):
+        self.vars_names = ["id", "name"]
+        self.more_sql = "catalog"
+        self.pattern_select()
+
+    def select_subcatalog(self):
+        self.vars_names = ["c.name", "s.name"]
+        self.more_sql = """\
+        catalog AS c JOIN subcatalog AS s 
+        ON c.id = s.id_catalog
+        """
+        self.pattern_select()
+
+    def select_product(self):
+        self.vars_names = ["s.name", "p.name", 'price', 'size.size', 'i.image']
+        self.more_sql = """\
+        product AS p JOIN subcatalog AS s JOIN image AS i
+        JOIN count JOIN size
+        ON p.id_subcatalog = s.id AND p.id = i.id_product AND 
+        count.id_product = p.id AND count.id_size = size.id
+        """
+
+        self.pattern_select()
+
     def __del__(self):
         print("this is __del__")
 
@@ -169,44 +215,47 @@ if __name__ == '__main__':
         cur = con.cursor()
         query = QueryData(con, cur)
 
-        print(
-            "-------------------------------------",
-            "1) Добавить данные в catalog;",
-            "2) Добавить данные в subcatalog;",
-            "3) Добавить данные в product;",
-            "4) Добавить данные в image;",
-            "5) Добавить данные в size;",
-            "6) Добавить данные в count;",
-            "7) Добавить данные в user;",
-            "8) Добавить данные в order_shop;",
-            "9) Добавить данные в prodcut_order;",
-            "Для выхода введите quit.",
-            "--------------------------------------",
-            sep="\n"
-        )
-        while True:
-            remote = input("Введите число: ")
-            if remote == "1":
-                query.insert_catalog()
-            elif remote == "2":
-                query.insert_subcatalog()
-            elif remote == "3":
-                query.insert_product()
-            elif remote == "4":
-                query.insert_image()
-            elif remote == "5":
-                query.insert_size()
-            elif remote == "6":
-                query.insert_count()
-            elif remote == "7":
-                query.insert_user()
-            elif remote == "8":
-                query.insert_order_shop()
-            elif remote == "9":
-                query.insert_product_order()
-            elif remote.lower() == "quit":
-                break
-            else:
-                print("Неизвестное значение.")
+        query.select_product()
+
+        # print(
+        #     "-------------------------------------",
+        #     "1) Добавить данные в catalog;",
+        #     "2) Добавить данные в subcatalog;",
+        #     "3) Добавить данные в product;",
+        #     "4) Добавить данные в image;",
+        #     "5) Добавить данные в size;",
+        #     "6) Добавить данные в count;",
+        #     "7) Добавить данные в user;",
+        #     "8) Добавить данные в order_shop;",
+        #     "9) Добавить данные в prodcut_order;",
+        #     "Для выхода введите quit.",
+        #     "--------------------------------------",
+        #     sep="\n"
+        # )
+        # while True:
+        #     remote = input("Введите число: ")
+        #     if remote == "1":
+        #         query.insert_catalog()
+        #     elif remote == "2":
+        #         query.insert_subcatalog()
+        #     elif remote == "3":
+        #         query.insert_product()
+        #     elif remote == "4":
+        #         query.insert_image()
+        #     elif remote == "5":
+        #         query.insert_size()
+        #     elif remote == "6":
+        #         query.insert_count()
+        #     elif remote == "7":
+        #         query.insert_user()
+        #     elif remote == "8":
+        #         query.insert_order_shop()
+        #     elif remote == "9":
+        #         query.insert_product_order()
+        #     elif remote.lower() == "quit":
+        #         break
+        #     else:
+        #         print("Неизвестное значение.")
+
 
         cur.close()
